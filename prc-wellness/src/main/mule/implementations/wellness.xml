@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="postNotifications" doc:id="704ef614-49a7-42f6-8444-eef054c256ee" >
+		<ee:transform doc:name="Transform Message" doc:id="c18e140a-8432-471a-838a-ed9fe1466ec9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Notifications envoyées avec succès."
+} as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="postWellnessBulk" doc:id="0f7c02e6-3885-416a-b956-29238d84ec63" >
+		<ee:transform doc:name="Transform Message" doc:id="79ee98d7-27e0-4f07-938b-47875fa6f804" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[
+  {
+    id: 1,
+    status: "CREATED"
+  }, 
+  {
+    id: 2,
+    status: "CONFLICT",
+    reason: "Déjà existant."
+  }
+] as Array {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+</mule>

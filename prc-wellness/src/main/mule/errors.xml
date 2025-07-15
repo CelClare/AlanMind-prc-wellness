@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<sub-flow name="genericError" doc:id="d5a89f9c-677f-42cf-9b0e-e6432aaac163" >
+		<set-payload value="#[output application/json&#10;---&#10;{&#10;    correlationId: correlationId,&#10;    code: error.errorType.identifier,&#10;    description: vars.description default error.description&#10;}]" doc:name="Generic response" doc:id="34d98f25-2024-4477-a9a4-92d4f40c813b" />
+		<set-variable value='#[error.errorType.identifier match {&#10;  case "BAD_REQUEST"            -&gt; 400&#10;  case "UNAUTHORIZED"           -&gt; 401&#10;  case "FORBIDDEN"              -&gt; 403&#10;  case "NOT_FOUND"              -&gt; 404&#10;  case "METHOD_NOT_ALLOWED"     -&gt; 405&#10;  case "NOT_ACCEPTABLE"         -&gt; 406&#10;  case "UNSUPPORTED_MEDIA_TYPE" -&gt; 415&#10;  case "NOT_IMPLEMENTED"        -&gt; 501&#10;  else                          -&gt; vars.httpStatus default 500&#10;}]' doc:name="[httpStatus]" doc:id="34ef61b8-d8c9-4239-91db-733523af16ba" variableName="httpStatus"/>
+		<logger level="ERROR" doc:name="ERROR" doc:id="36e33d0e-4b4b-4876-86e0-02e999ae247a" category="${app.name}" message='#[{&#10;	step: "Global error handler",&#10;	data: {&#10;		errorDescription: error.description&#10;	}&#10;}]'/>
+	</sub-flow>
+	<error-handler name="global_Error-Handler" doc:id="6daead76-5ef0-4d22-89c2-fb754ca36d36" >
+		<!-- [STUDIO:"custom error"]<on-error-propagate enableNotifications="true" logException="true" doc:name="custom error" doc:id="b3c6bc75-2791-462d-9444-71babe190293" type="CUSTOM:ERROR">
+			<set-variable value="set description here" doc:name="[description&#93;" doc:id="6652aec4-300a-4782-b43c-676c37532c22" variableName="description"/>
+			<set-variable value="" doc:name="[httpStatus&#93;" doc:id="40a9b1ed-da7e-4234-9491-f99a62c81a23" variableName="httpStatus"/>
+			<flow-ref doc:name="genericError" doc:id="767f0697-ecda-4666-b39f-edd151b87b3a" name="genericError"/>
+		</on-error-propagate> [STUDIO] -->
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="Default errors" doc:id="8f30c166-2db2-4e48-abba-5affb7c7e2e0" type="ANY">
+			<flow-ref doc:name="genericError" doc:id="f1d0d049-638f-4fde-a8d7-7e4927773edc" name="genericError"/>
+		</on-error-propagate>
+	</error-handler>
+</mule>

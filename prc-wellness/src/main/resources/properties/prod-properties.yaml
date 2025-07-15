@@ -1,0 +1,9 @@
+api: 
+  name: "${artifactId}-${mule.env}"
+  version: "${version}"
+  port: "8081"
+  autodiscoveryId: "000000"
+  
+system-name:
+  password: "${secure::system-name.password}"    
+  

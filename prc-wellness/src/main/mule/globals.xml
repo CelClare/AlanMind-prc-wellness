@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+    <http:listener-config name="prc-wellness-api-httpListenerConfig" basePath="api/v1">
+        <http:listener-connection host="0.0.0.0" port="${api.port}" />
+    </http:listener-config>
+    <apikit:config name="prc-wellness-router" api="resource::c6f447df-17d4-4a01-a863-96f97c48a183:wellness-process-api:1.0.1:raml:zip:wellness-process-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <configuration-properties doc:name="Configuration properties" doc:id="4063df3b-5a84-4651-abef-d4b8177267f0" file="properties/${mule.env}-properties.yaml" />
+    <configuration doc:name="Configuration" doc:id="20536e27-ec16-4070-932c-510e13ec31f5" defaultErrorHandler-ref="global_Error-Handler" />
+    <api-gateway:autodiscovery apiId="${api.autodiscoveryId}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="b16b08d7-6057-4749-ad64-9eb27e8721a7" flowRef="prc-wellness-api-main" />
+    <secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="7e230af7-622b-4e28-a7a3-41e5f835a574" file="properties/${mule.env}-secure-properties.yaml" key="${mule.encryptionKey}" />
+    <global-property doc:name="Global Property" doc:id="5460ed20-7b5d-4408-800c-4af36f867ba5" name="mule.env" value="local" />
+    <global-property doc:name="Global Property" doc:id="d1b898e1-e999-4ce6-808a-541b6963e3af" name="mule.encryptionKey" value="alanmind21072025" />
+</mule>

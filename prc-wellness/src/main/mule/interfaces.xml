@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="get:\heartbeat:prc-wellness-router" doc:id="c2e77907-5bc4-414b-baab-8f4350ffb601" >
+		<logger level="INFO" doc:name="Start" doc:id="87ea207c-006d-43b2-bf2f-0df62c0d2711" message='#[import prettifyFlowName from modules::ToolBox&#10;---&#10;{&#10;	step: "Start $(prettifyFlowName(flow.name)) flow",&#10;	data: {}&#10;}]' category="${app.name}"/>
+		<ee:transform doc:name="Transform Message" doc:id="4fb89dae-0e18-47bf-88ff-ad9eaf5c8070" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import parseType from modules::ToolBox
+output application/json
+---
+{
+  status: "Healthy",
+  name: p('api.name'),
+  version: p('api.version'),
+  "type": parseType(p('app.name'))
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="End" doc:id="9547a8d3-9340-49b9-8a88-f2328ee378c9" message='#[import prettifyFlowName from modules::ToolBox&#10;---&#10;{&#10;	step: "End $(prettifyFlowName(flow.name)) flow",&#10;	data: {}&#10;}]' category="${app.name}"/>
+	</flow>
+	<flow name="post:\notifications\schedule:prc-wellness-router" doc:id="86ea74a4-b0d9-4073-9da4-e1f02a9de9cb" >
+		<logger level="INFO" doc:name="Start" doc:id="de237947-4616-4d24-b05f-c7211337408e" message='#[import prettifyFlowName from modules::ToolBox&#10;---&#10;{&#10;	step: "Start $(prettifyFlowName(flow.name)) flow",&#10;	data: {}&#10;}]' category="${app.name}" />
+		<flow-ref doc:name="Flow Reference" doc:id="b296c918-9b08-4c9d-b2e2-814e0566ddf3" name="postNotifications"/>
+		<logger level="INFO" doc:name="End" doc:id="3165fc5f-3c58-4e45-a45a-cef908531af4" message='#[import prettifyFlowName from modules::ToolBox&#10;---&#10;{&#10;	step: "End $(prettifyFlowName(flow.name)) flow",&#10;	data: {}&#10;}]' category="${app.name}" />
+	</flow>
+	<flow name="post:\wellness\bulk:application\json:prc-wellness-router" doc:id="4f27c962-9b2a-4cc8-a7b2-3d5f1d8b62b1" >
+		<logger level="INFO" doc:name="Start" doc:id="3afc8fd5-6de0-46bb-870c-5694730449cb" message='#[import prettifyFlowName from modules::ToolBox&#10;---&#10;{&#10;	step: "Start $(prettifyFlowName(flow.name)) flow",&#10;	data: {}&#10;}]' category="${app.name}" />
+		<flow-ref doc:name="Flow Reference" doc:id="db8a5c1a-46f6-48bd-afdc-4985c811fb9f" name="postWellnessBulk"/>
+		<logger level="INFO" doc:name="End" doc:id="3b356e08-ba6d-4d58-98d9-feef664935b2" message='#[import prettifyFlowName from modules::ToolBox&#10;---&#10;{&#10;	step: "End $(prettifyFlowName(flow.name)) flow",&#10;	data: {}&#10;}]' category="${app.name}" />
+	</flow>
+</mule>
