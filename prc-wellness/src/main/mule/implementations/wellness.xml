@@ -47,9 +47,19 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
 				<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
-vars.subscribers map (item) -> {
-  subscriber: item,
-  wellness: if (sizeOf(vars.wellness) > 0) vars.wellness[0] else {},
+vars.subscribers map (sub) -> {
+  subscriber: sub,
+  wellness: 
+    if (sizeOf(vars.wellness) > 0 and vars.wellness[0].date? and vars.wellness[0].date != null)
+      {
+        id: vars.wellness[0].id,
+        title: vars.wellness[0].title,
+        description: vars.wellness[0].description,
+        category: vars.wellness[0].category,
+        scheduled_date: vars.wellness[0].date,
+        schedules: vars.wellness[0].schedules
+      }
+    else {},
   weather: vars.weather default { description: "La météo est difficile à récupérer dans ce coin" }
 }]]></ee:set-payload>
 			</ee:message>
