@@ -9,13 +9,33 @@
 		<logger level="ERROR" doc:name="ERROR" doc:id="36e33d0e-4b4b-4876-86e0-02e999ae247a" category="${app.name}" message='#[{&#10;	step: "Global error handler",&#10;	data: {&#10;		errorDescription: error.description&#10;	}&#10;}]'/>
 	</sub-flow>
 	<error-handler name="global_Error-Handler" doc:id="6daead76-5ef0-4d22-89c2-fb754ca36d36" >
-		<!-- [STUDIO:"custom error"]<on-error-propagate enableNotifications="true" logException="true" doc:name="custom error" doc:id="b3c6bc75-2791-462d-9444-71babe190293" type="CUSTOM:ERROR">
-			<set-variable value="set description here" doc:name="[description&#93;" doc:id="6652aec4-300a-4782-b43c-676c37532c22" variableName="description"/>
-			<set-variable value="" doc:name="[httpStatus&#93;" doc:id="40a9b1ed-da7e-4234-9491-f99a62c81a23" variableName="httpStatus"/>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="send email" doc:id="b3c6bc75-2791-462d-9444-71babe190293" type="SMTP:NOT_FOUND">
+			<set-variable value="No well-being content to send today" doc:name="[description]" doc:id="6652aec4-300a-4782-b43c-676c37532c22" variableName="description"/>
+			<set-variable value="404" doc:name="[httpStatus404]" doc:id="40a9b1ed-da7e-4234-9491-f99a62c81a23" variableName="httpStatus"/>
 			<flow-ref doc:name="genericError" doc:id="767f0697-ecda-4666-b39f-edd151b87b3a" name="genericError"/>
-		</on-error-propagate> [STUDIO] -->
+		</on-error-propagate>
 		<on-error-propagate enableNotifications="true" logException="true" doc:name="Default errors" doc:id="8f30c166-2db2-4e48-abba-5affb7c7e2e0" type="ANY">
 			<flow-ref doc:name="genericError" doc:id="f1d0d049-638f-4fde-a8d7-7e4927773edc" name="genericError"/>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="weather404" doc:id="28a558f6-1958-45cc-b3c7-314e7049f006" type="WEATHER:NOT_FOUND" >
+			<set-variable value="weather not found" doc:name="[description]" doc:id="3e9fa500-fea8-43f3-bc44-e2d62743e05a" variableName="description" />
+			<set-variable value="404" doc:name="[httpStatus404]" doc:id="9a7046bc-d878-4f48-9746-6c31d9e4880c" variableName="httpStatus" />
+			<flow-ref doc:name="genericError" doc:id="b0704e1a-975b-4222-b2c6-035c0cdfb91b" name="genericError" />
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="weather500" doc:id="11057da5-96e2-41b3-ab2e-736a53d50294" type="WEATHER:PROVIDER_ERROR" >
+			<set-variable value="Crach here ! " doc:name="[description]" doc:id="dc4082e9-2827-4034-9fa0-35480c9973ed" variableName="description" />
+			<set-variable value="500" doc:name="[httpStatus500]" doc:id="8f33e639-a6c1-4d68-b784-090d64e4107e" variableName="httpStatus" />
+			<flow-ref doc:name="genericError" doc:id="0427b769-176d-4577-9bdb-a54255b43fd8" name="genericError" />
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="database subscribers" doc:id="efab8ddd-e38a-4837-a429-9f5ead1ecb42" type="DBSUB:NOT_FOUND" >
+			<set-variable value="No subscriber here" doc:name="[description]" doc:id="6302c044-55e8-431d-a487-416ce371fd9f" variableName="description" />
+			<set-variable value="404" doc:name="[httpStatus404]" doc:id="a45da6b6-12a7-4073-b4e8-80f68b0226e8" variableName="httpStatus" />
+			<flow-ref doc:name="genericError" doc:id="d33ec11a-b8e2-4849-bc22-68d248a11d3a" name="genericError" />
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="database wellness" doc:id="d24353df-da90-47f1-9ee5-de0daddd6204" type="DBWEL:NOT_FOUND" >
+			<set-variable value="No wellness here" doc:name="[description]" doc:id="06618f54-20db-4522-9559-232984c57e60" variableName="description" />
+			<set-variable value="404" doc:name="[httpStatus404]" doc:id="a4e51309-536d-459c-9fab-ee4b797395b0" variableName="httpStatus" />
+			<flow-ref doc:name="genericError" doc:id="c84d6df1-e298-43be-89f4-e27e02f0cb3a" name="genericError" />
 		</on-error-propagate>
 	</error-handler>
 </mule>

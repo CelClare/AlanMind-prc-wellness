@@ -1,9 +1,31 @@
 api: 
   name: "${artifactId}-${mule.env}"
   version: "${version}"
-  port: "8081"
+  port: "8083"
   autodiscoveryId: "000000"
   
-system-name:
-  password: "${secure::system-name.password}"    
+sys-weather:
+  host: "localhost"
+  port: "8090"
+  basepath: "api/v1"
+  path: "/weather"
+
+sys-db:
+  host: "localhost"
+  port: "8084"
+  basepath: "api/v1"    
   
+sys-smtp:
+  host: "localhost"
+  port: "8081"
+  basepath: "api/v1"
+  path: "/notifications"    
+  
+scheduler:
+  state: "started"
+  cron: "0 0/5 * * * ?"
+  timezone: "Europe/London"
+
+authorizations:
+  client_id: ""
+  client_secret: ""

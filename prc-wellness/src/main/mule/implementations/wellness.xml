@@ -1,39 +1,152 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
 	<sub-flow name="postNotifications" doc:id="704ef614-49a7-42f6-8444-eef054c256ee" >
-		<ee:transform doc:name="Transform Message" doc:id="c18e140a-8432-471a-838a-ed9fe1466ec9" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
+		<http:request method="GET" doc:name="to sys-database for subscribers" doc:id="ba4453e4-edfd-4c37-ba5e-5d6b478d6612" config-ref="HTTP_Request_configuration-db" path="/subscribers">
+			<error-mapping sourceType="HTTP:NOT_FOUND" targetType="DBSUB:NOT_FOUND" />
+		</http:request>
+		<set-variable value="#[payload]" doc:name="[subscribers]" doc:id="5912b54f-f1d7-4230-8c46-e22992d507ae" variableName="subscribers"/>
+		<http:request method="GET" doc:name="to sys-database for retrieve wellness" doc:id="4ee7a62d-56e0-4fcf-b2e4-0a438b8a43bc" config-ref="HTTP_Request_configuration-db" path="/wellness/{date}">
+			<error-mapping sourceType="HTTP:NOT_FOUND" targetType="DBWEL:NOT_FOUND" />
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	date : vars.date
+}]]]></http:uri-params>
+		</http:request>
+		<set-variable value="#[payload]" doc:name="[wellness]" doc:id="f7a6e9fd-2048-42ff-9066-57907a6472af" variableName="wellness"/>
+		<logger level="DEBUG" doc:name="After request to database" doc:id="b470252d-e1ed-4d70-b6ef-9a90bf46b430" message='#[{&#10;	step: "After request to database",&#10;	data: {db:payload}&#10;}]' category="${app.name}" />
+		<http:request method="GET" doc:name="Request to OpenWeather" doc:id="7d95df9c-dd7b-49da-8f86-81310230ca1d" config-ref="HTTP_Request_configuration-weather" path="/weather/{city}/{date}">
+			<error-mapping sourceType="HTTP:NOT_FOUND" targetType="WEATHER:NOT_FOUND" />
+			<error-mapping sourceType="HTTP:INTERNAL_SERVER_ERROR" targetType="WEATHER:PROVIDER_ERROR" />
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	date : vars.date,
+	city : vars.city
+}]]]></http:uri-params>
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	q : vars.city,
+	appid : p('weather.api_key'),
+	units : "metric"
+}]]]></http:query-params>
+		</http:request>
+		<set-variable value="#[payload]" doc:name="[weather]" doc:id="9f5c639a-68e3-43bf-8bce-b8559fd3918a" variableName="weather"/>
+		<logger level="DEBUG" doc:name="After request to OpenWeather" doc:id="41e2ba97-de55-4da0-86da-626e5c8d3ab3" message='#[{&#10;	step: "After request to OpenWeather",&#10;	data: {weather:payload}&#10;}]' category="${app.name}" />
+		<ee:transform doc:name="Mapping" doc:id="9ef0c3c5-dbcb-4c3d-b1cd-aca2aca9d74f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.subscribers map (item) -> {
+  subscriber: item,
+  wellness: if (sizeOf(vars.wellness) > 0) vars.wellness[0] else {},
+  weather: vars.weather default { description: "La météo est difficile à récupérer dans ce coin" }
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<foreach doc:name="For Each subscribers for send email" doc:id="200df949-cd89-4b4d-bc51-790e35f42c98" collection="#[payload]">
+			<set-variable value="#[payload.subscriber.email]" doc:name="[subscriberMail]" doc:id="ea3bde01-5625-4811-805b-c730593071bd" variableName="subscriberMail" />
+			<try doc:name="Try" doc:id="6ed32594-1428-47d6-893c-3a1acc7e159e" >
+				<http:request method="POST" doc:name="to sys-smtp" doc:id="55dfc2c2-388d-453c-bb72-a9d0fd45c88c" config-ref="HTTP_Request_configuration-smtp" path="/notifications" responseTimeout="10000000" >
+					<error-mapping sourceType="HTTP:NOT_FOUND" targetType="SMTP:NOT_FOUND" />
+					<http:body ><![CDATA[#[[payload]]]]></http:body>
+				</http:request>
+				<ee:transform doc:name="SUCCESS" doc:id="07694645-9f36-48f9-a549-638f99cce4ac">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Email envoyé avec succès à " ++ vars.subscriberMail,
+  date: now() as String
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="6702b661-24ed-4ea7-87c1-8bfd2c63e981" >
+						<os:store doc:name="Object Store for send email" doc:id="2f418d0e-ee39-4066-9bca-0bc7052e9bd4" key='#[vars.subscriberMail ++ "-" ++ (now() as String)]' objectStore="Object_store"/>
+						<logger level="DEBUG" doc:name="After request to sys-smtp" doc:id="ba87d11b-2fcd-440a-ad4d-5515108b9d94" message='#[{&#10;	step: "After request to syssmtp",&#10;	data: {syssmtp:payload}&#10;}]' category="${app.name}" />
+						<ee:transform doc:name="FAILED" doc:id="5afc7474-6e2a-4a16-ab55-e01506a28c9d" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Échec envoi email à " ++ vars.subscriberMail,
+  date: now() as String,
+  cause: error.description default "Cause inconnue"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</foreach>
+		<ee:transform doc:name="Transform Message" doc:id="c18e140a-8432-471a-838a-ed9fe1466ec9">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
   message: "Notifications envoyées avec succès."
-} as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+}]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 	</sub-flow>
 	<sub-flow name="postWellnessBulk" doc:id="0f7c02e6-3885-416a-b956-29238d84ec63" >
-		<ee:transform doc:name="Transform Message" doc:id="79ee98d7-27e0-4f07-938b-47875fa6f804" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
+		<foreach doc:name="For Each bulk" doc:id="e267bfe2-58d8-4557-a279-228777fbe169" collection="#[payload]">
+			<try doc:name="Try" doc:id="75bc26d3-eb37-4e59-9f48-3cb52d96ad08" >
+				<logger level="DEBUG" doc:name="Before Request wellness" doc:id="b9dea07e-a5c1-41bf-8d49-a822dcd928b4" message='#[{&#10;	step: "Before Request wellness",&#10;	data: {wellness:payload}&#10;}]' category="${app.name}" />
+				<http:request method="POST" doc:name="to sys-database for create wellness bulk" doc:id="1b7ec02c-c4a7-4368-9625-d4549ee7b3ad" config-ref="HTTP_Request_configuration-db" path="/wellness">
+		</http:request>
+				<logger level="DEBUG" doc:name="After Request wellness" doc:id="7f567ac4-1451-4f7e-8bf7-5c64a5f806b7" message='#[{&#10;	step: "After Request wellness",&#10;	data: {wellness:payload}&#10;}]' category="${app.name}" />
+				<ee:transform doc:name="Transform Message" doc:id="79ee98d7-27e0-4f07-938b-47875fa6f804">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
-[
-  {
-    id: 1,
-    status: "CREATED"
-  }, 
-  {
-    id: 2,
-    status: "CONFLICT",
-    reason: "Déjà existant."
-  }
-] as Array {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+{
+  id: payload.id,
+  status: if (attributes.statusCode == 201) "CREATED" else "CONFLICT",
+  reason: if (attributes.statusCode == 409) "Déjà existant." else null
+}]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="a830440c-0bfa-4ec2-94c7-5dfe1dac050f" >
+						<ee:transform doc:name="Transform Message" doc:id="5a6c0721-5e9e-45e3-91f5-5f0900a683be" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  id: payload.id,
+  status: "CONFLICT",
+  reason: "Déjà existant." 
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</foreach>
+		<ee:transform doc:name="Transform Message" doc:id="6341e27f-e317-46f6-a022-05db22ee0c5b">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
 	</sub-flow>
 </mule>

@@ -4,6 +4,30 @@ api:
   port: "8081"
   autodiscoveryId: "000000"
   
-system-name:
-  password: "${secure::system-name.password}"    
+sys-weather:
+  protocol: "HTTPS"
+  basePath: "api/v1"
+  host: ""
+  port: "443"
+  api_key: "${secure::weather.api_key}"
   
+sys-db:
+  protocol: "HTTPS"
+  basePath: "api/v1"
+  host: ""
+  port: "443"    
+  
+sys-smtp:
+  protocol: "HTTPS"
+  basePath: "api/v1"
+  host: ""
+  port: "443"   
+  
+authorizations:
+  client_id: ""
+  client_secret: "" 
+  
+scheduler:
+  state: "started"
+  cron: "0 0 8 ? * MON-FRI"
+  timezone: "Europe/London"
