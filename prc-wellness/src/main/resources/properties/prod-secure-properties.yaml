@@ -1,3 +1,2 @@
-anypoint:
-  platform:
-    client_secret: '![]'
+weather:
+  api_key:  "![t8t2ViGf6z8C79yVs5PKR7dPhbqHe1gJ+OYQg23M3QrgpLiEqZqoz7lk2L7ZSZsz]"

@@ -41,12 +41,6 @@
 				<extensions>true</extensions>
 				<configuration>
 					<classifier>mule-application</classifier>
-					<sharedLibraries>
-						<sharedLibrary>
-							<groupId>com.mycompany</groupId>
-							<artifactId>postgresql-42.7.7</artifactId>
-						</sharedLibrary>
-					</sharedLibraries>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -82,11 +76,6 @@
 			<artifactId>mule-db-connector</artifactId>
 			<version>1.14.16</version>
 			<classifier>mule-plugin</classifier>
-		</dependency>
-		<dependency>
-			<groupId>com.mycompany</groupId>
-			<artifactId>postgresql-42.7.7</artifactId>
-			<version>0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>c6f447df-17d4-4a01-a863-96f97c48a183</groupId>

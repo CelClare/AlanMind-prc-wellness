@@ -8,7 +8,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
-	<sub-flow name="postNotifications" doc:id="704ef614-49a7-42f6-8444-eef054c256ee" >
+	<sub-flow name="sendNotifications" doc:id="704ef614-49a7-42f6-8444-eef054c256ee" >
 		<http:request method="GET" doc:name="to sys-database for subscribers" doc:id="ba4453e4-edfd-4c37-ba5e-5d6b478d6612" config-ref="HTTP_Request_configuration-db" path="/subscribers">
 			<error-mapping sourceType="HTTP:NOT_FOUND" targetType="DBSUB:NOT_FOUND" />
 		</http:request>
@@ -23,24 +23,39 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
 		</http:request>
 		<set-variable value="#[payload]" doc:name="[wellness]" doc:id="f7a6e9fd-2048-42ff-9066-57907a6472af" variableName="wellness"/>
 		<logger level="DEBUG" doc:name="After request to database" doc:id="b470252d-e1ed-4d70-b6ef-9a90bf46b430" message='#[{&#10;	step: "After request to database",&#10;	data: {db:payload}&#10;}]' category="${app.name}" />
-		<http:request method="GET" doc:name="Request to OpenWeather" doc:id="7d95df9c-dd7b-49da-8f86-81310230ca1d" config-ref="HTTP_Request_configuration-weather" path="/weather/{city}/{date}">
+		<set-variable value="#[(vars.subscribers map $.city) distinctBy $]" doc:name="[cities]" doc:id="77619735-ec0c-454a-81d1-35395f68cdec" variableName="cities" />
+		<foreach doc:name="For Each [cities]" doc:id="42fe096b-6ecf-4237-baba-a0c12490dec1" collection="#[vars.cities]">
+			<set-variable value="#[payload]" doc:name="[city]" doc:id="5a1f4cd4-d247-430f-9108-5d35efb8fde3" variableName="city" />
+			<ee:transform doc:name="Before request EncodeURL with regex" doc:id="05158907-7890-44ac-8975-9636f87b5c7d">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+  city: payload as String replace /é|è|ê/ with "e"
+}
+]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<http:request method="GET" doc:name="Request to OpenWeather" doc:id="7d95df9c-dd7b-49da-8f86-81310230ca1d" config-ref="HTTP_Request_configuration-weather" path="/weather/{city}/{date}">
 			<error-mapping sourceType="HTTP:NOT_FOUND" targetType="WEATHER:NOT_FOUND" />
 			<error-mapping sourceType="HTTP:INTERNAL_SERVER_ERROR" targetType="WEATHER:PROVIDER_ERROR" />
-			<http:uri-params ><![CDATA[#[output application/java
+			<http:uri-params><![CDATA[#[output application/java
 ---
 {
 	date : vars.date,
-	city : vars.city
+	city : payload.city
 }]]]></http:uri-params>
 			<http:query-params><![CDATA[#[output application/java
 ---
 {
-	q : vars.city,
+	q : payload.city,
 	appid : p('weather.api_key'),
 	units : "metric"
 }]]]></http:query-params>
 		</http:request>
-		<set-variable value="#[payload]" doc:name="[weather]" doc:id="9f5c639a-68e3-43bf-8bce-b8559fd3918a" variableName="weather"/>
+			<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;(vars.weatherList default []) ++ [payload]]" doc:name="[weatherList]" doc:id="ba2600b0-ab27-4692-a66b-f7395c97f0fd" variableName="weatherList" />
+		</foreach>
 		<logger level="DEBUG" doc:name="After request to OpenWeather" doc:id="41e2ba97-de55-4da0-86da-626e5c8d3ab3" message='#[{&#10;	step: "After request to OpenWeather",&#10;	data: {weather:payload}&#10;}]' category="${app.name}" />
 		<ee:transform doc:name="Mapping" doc:id="9ef0c3c5-dbcb-4c3d-b1cd-aca2aca9d74f">
 			<ee:message>
@@ -48,7 +63,13 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
 output application/json
 ---
 vars.subscribers map (sub) -> {
-  subscriber: sub,
+  subscriber: {
+    id: sub.id,                             
+    firstname: sub.firstname ,
+    lastname: sub.lastname ,
+    email: sub.email,
+    city: sub.city
+  },
   wellness: 
     if (sizeOf(vars.wellness) > 0 and vars.wellness[0].date? and vars.wellness[0].date != null)
       {
@@ -56,37 +77,67 @@ vars.subscribers map (sub) -> {
         title: vars.wellness[0].title,
         description: vars.wellness[0].description,
         category: vars.wellness[0].category,
-        scheduled_date: vars.wellness[0].date,
-        schedules: vars.wellness[0].schedules
+        scheduled_date: vars.wellness[0].date
       }
     else {},
-  weather: vars.weather default { description: "La météo est difficile à récupérer dans ce coin" }
-}]]></ee:set-payload>
+  weather: 
+    (vars.weatherList filter ((w) -> (w.city default "") contains (sub.city default "")))[0]
+    default {
+      city: sub.city,
+      date: now() as String {format: "yyyy-MM-dd"},
+      temperature: "-°C",
+      humidity: "-%",
+      description: "Météo indisponible",
+      emoji: "❓",
+      windSpeed: "- km/h"
+    }
+}
+]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<foreach doc:name="For Each subscribers for send email" doc:id="200df949-cd89-4b4d-bc51-790e35f42c98" collection="#[payload]">
-			<set-variable value="#[payload.subscriber.email]" doc:name="[subscriberMail]" doc:id="ea3bde01-5625-4811-805b-c730593071bd" variableName="subscriberMail" />
-			<try doc:name="Try" doc:id="6ed32594-1428-47d6-893c-3a1acc7e159e" >
-				<http:request method="POST" doc:name="to sys-smtp" doc:id="55dfc2c2-388d-453c-bb72-a9d0fd45c88c" config-ref="HTTP_Request_configuration-smtp" path="/notifications" responseTimeout="10000000" >
+		<set-variable value="#[output application/json&#10;---&#10;&#10;[]]" doc:name="[resultsList]" doc:id="b6db7bdd-6996-4447-b31e-e852fa16c065" variableName="resultsList" />
+		<foreach doc:name="For Each subscribers for send email" doc:id="45f9d0d7-a522-4ffb-a0cc-0b424762daa6" collection="#[payload]" >
+			<set-variable value="#[payload.subscriber.email]" doc:name="[subscriberMail]" doc:id="c9a6b42d-b8d2-4998-a63d-8d5622b164af" variableName="subscriberMail" />
+			<try doc:name="Try" doc:id="a57b93c0-9baa-4e88-8dde-4eba88f8acec" >
+				<ee:transform doc:name="Email validation [boolean]" doc:id="91574f26-97a0-49ef-8fda-4fc3531b7ccf">
+					<ee:message>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="boolean" ><![CDATA[%dw 2.0
+output application/java
+---
+(vars.subscriberMail default "") matches /.+@.+\..+/
+]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<choice doc:name="Choice" doc:id="91f82567-42c8-440e-8ae5-497e0f308ed7" >
+					<when expression="#[vars.boolean == true]">
+						<http:request method="POST" doc:name="to sys-smtp" doc:id="8c3b840e-813b-4161-a7ad-dbd173aae13c" config-ref="HTTP_Request_configuration-smtp" path="/notifications" responseTimeout="10000000">
 					<error-mapping sourceType="HTTP:NOT_FOUND" targetType="SMTP:NOT_FOUND" />
-					<http:body ><![CDATA[#[[payload]]]]></http:body>
+					<http:body><![CDATA[#[[payload]]]]></http:body>
 				</http:request>
-				<ee:transform doc:name="SUCCESS" doc:id="07694645-9f36-48f9-a549-638f99cce4ac">
-				<ee:message>
-					<ee:set-payload><![CDATA[%dw 2.0
+					</when>
+					<otherwise >
+						<raise-error doc:name="INVALID_EMAIL" doc:id="47df0dd8-3b38-4dde-90c1-d1c50e503d79" type="EMAIL:INVALID_EMAIL" description="#[ &quot;L'adresse &quot; ++ vars.subscriberMail ++ &quot; n'est pas un email valide.&quot; ]"/>
+					</otherwise>
+				</choice>
+				<ee:transform doc:name="SUCCESS" doc:id="78df7ee3-4591-473f-aff7-5a43de16d3e9">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
   message: "Email envoyé avec succès à " ++ vars.subscriberMail,
   date: now() as String
 }]]></ee:set-payload>
-				</ee:message>
-			</ee:transform>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="#[output application/json&#10;---&#10;&#10;(vars.resultsList default []) ++ [payload]]" doc:name="[resultsList]" doc:id="17c1935f-92dc-4548-9855-e56704e804bb" variableName="resultsList" />
 				<error-handler >
-					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="6702b661-24ed-4ea7-87c1-8bfd2c63e981" >
-						<os:store doc:name="Object Store for send email" doc:id="2f418d0e-ee39-4066-9bca-0bc7052e9bd4" key='#[vars.subscriberMail ++ "-" ++ (now() as String)]' objectStore="Object_store"/>
-						<logger level="DEBUG" doc:name="After request to sys-smtp" doc:id="ba87d11b-2fcd-440a-ad4d-5515108b9d94" message='#[{&#10;	step: "After request to syssmtp",&#10;	data: {syssmtp:payload}&#10;}]' category="${app.name}" />
-						<ee:transform doc:name="FAILED" doc:id="5afc7474-6e2a-4a16-ab55-e01506a28c9d" >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="09390dee-61bf-427f-a128-388e9bfa69f8" type="EMAIL:INVALID_EMAIL">
+						<logger level="DEBUG" doc:name="Erreur email" doc:id="09256987-8f93-4ddd-86c8-35b3abb312b3" message='#[{&#10;  step: "Erreur email envoi notification",&#10;  mail: vars.subscriberMail,&#10;  erreur: error&#10;}]' category="${app.name}" />
+						<os:store doc:name="Object Store for email" doc:id="49a145ed-3c74-4f5f-9735-19d92c63db0a" key='#[vars.subscriberMail ++ "-" ++ (now() as String)]' objectStore="Object_store" />
+						<ee:transform doc:name="FAILED" doc:id="c7d9c748-fb77-40a4-b07a-80dc3da0974d" >
 							<ee:message >
 								<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
@@ -98,65 +149,74 @@ output application/json
 }]]></ee:set-payload>
 							</ee:message>
 						</ee:transform>
+						<set-variable value="#[output application/json&#10;---&#10;&#10;(vars.resultsList default []) ++ [payload]]" doc:name="[resultsList]" doc:id="f9159442-f76b-4b4d-ad9f-5ea96689c9c2" variableName="resultsList" />
 					</on-error-continue>
 				</error-handler>
 			</try>
 		</foreach>
-		<ee:transform doc:name="Transform Message" doc:id="c18e140a-8432-471a-838a-ed9fe1466ec9">
-			<ee:message>
-				<ee:set-payload><![CDATA[%dw 2.0
+		<ee:transform doc:name="Transform Message" doc:id="321048b7-6996-4fec-9994-1180d1c77a07">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
-  message: "Notifications envoyées avec succès."
+  message: "Notifications envoyées avec succès.",
+  results: vars.resultsList
 }]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
+				</ee:message>
+			</ee:transform>
+		<logger level="INFO" doc:name="Response" doc:id="7d2f1b49-cce1-40e5-a2f2-ea21a8f9ced6" message='#[{&#10;  step: "After response",&#10;  results: vars.resultsList&#10;}]' category="${app.name}" />
 	</sub-flow>
 	<sub-flow name="postWellnessBulk" doc:id="0f7c02e6-3885-416a-b956-29238d84ec63" >
+		<set-variable value="#[output application/json&#10;---&#10;&#10;[]]" doc:name="[resultsList]" doc:id="46049046-624d-456a-b0c9-d52bd7246406" variableName="resultsList" />
 		<foreach doc:name="For Each bulk" doc:id="e267bfe2-58d8-4557-a279-228777fbe169" collection="#[payload]">
+			<set-variable value="#[output application/json&#10;---&#10;&#10;payload.title]" doc:name="[title]" doc:id="ade99b0f-01f2-4ab7-a479-9d9146fdfb7b" variableName="title" />
 			<try doc:name="Try" doc:id="75bc26d3-eb37-4e59-9f48-3cb52d96ad08" >
 				<logger level="DEBUG" doc:name="Before Request wellness" doc:id="b9dea07e-a5c1-41bf-8d49-a822dcd928b4" message='#[{&#10;	step: "Before Request wellness",&#10;	data: {wellness:payload}&#10;}]' category="${app.name}" />
 				<http:request method="POST" doc:name="to sys-database for create wellness bulk" doc:id="1b7ec02c-c4a7-4368-9625-d4549ee7b3ad" config-ref="HTTP_Request_configuration-db" path="/wellness">
 		</http:request>
 				<logger level="DEBUG" doc:name="After Request wellness" doc:id="7f567ac4-1451-4f7e-8bf7-5c64a5f806b7" message='#[{&#10;	step: "After Request wellness",&#10;	data: {wellness:payload}&#10;}]' category="${app.name}" />
-				<ee:transform doc:name="Transform Message" doc:id="79ee98d7-27e0-4f07-938b-47875fa6f804">
+				<ee:transform doc:name="created" doc:id="79ee98d7-27e0-4f07-938b-47875fa6f804">
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
-  id: payload.id,
+  title: vars.title,
   status: if (attributes.statusCode == 201) "CREATED" else "CONFLICT",
   reason: if (attributes.statusCode == 409) "Déjà existant." else null
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+				<set-variable value="#[output application/json&#10;---&#10;&#10;(vars.resultsList default []) ++ [payload]]" doc:name="[resultsList]" doc:id="9157bcfe-c578-4cb5-a2a3-ed956301b2fa" variableName="resultsList" />
 				<error-handler >
 					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="a830440c-0bfa-4ec2-94c7-5dfe1dac050f" >
-						<ee:transform doc:name="Transform Message" doc:id="5a6c0721-5e9e-45e3-91f5-5f0900a683be" >
+						<ee:transform doc:name="Conflict" doc:id="5a6c0721-5e9e-45e3-91f5-5f0900a683be" >
 							<ee:message >
 								<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
 {
-  id: payload.id,
+  title: vars.title,
   status: "CONFLICT",
   reason: "Déjà existant." 
 }]]></ee:set-payload>
 							</ee:message>
 						</ee:transform>
+						<set-variable value="#[output application/json&#10;---&#10;&#10;(vars.resultsList default []) ++ [payload]]" doc:name="[resultsList]" doc:id="6c168c3a-fcad-416c-8f4a-2b699abdb1b3" variableName="resultsList" />
 					</on-error-continue>
 				</error-handler>
 			</try>
 		</foreach>
-		<ee:transform doc:name="Transform Message" doc:id="6341e27f-e317-46f6-a022-05db22ee0c5b">
-				<ee:message>
-					<ee:set-payload><![CDATA[%dw 2.0
+		<ee:transform doc:name="Response" doc:id="fd0cf59d-d344-4943-84b7-1fe69332d3d4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-payload]]></ee:set-payload>
-				</ee:message>
-			</ee:transform>
+{
+  results: vars.resultsList
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
 	</sub-flow>
 </mule>
