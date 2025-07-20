@@ -24,12 +24,24 @@ output application/json
 	</flow>
 	<flow name="post:\notifications\schedule:prc-wellness-router" doc:id="86ea74a4-b0d9-4073-9da4-e1f02a9de9cb" >
 		<logger level="INFO" doc:name="Start" doc:id="de237947-4616-4d24-b05f-c7211337408e" message='#[import prettifyFlowName from modules::ToolBox&#10;---&#10;{&#10;	step: "Start $(prettifyFlowName(flow.name)) flow",&#10;	data: {}&#10;}]' category="${app.name}" />
-		<flow-ref doc:name="Flow Reference" doc:id="b296c918-9b08-4c9d-b2e2-814e0566ddf3" name="postNotifications"/>
+		<set-variable value="#[payload.date]" doc:name="[date]" doc:id="9791591d-78f9-4a09-8b2a-2341047bbfa7" variableName="date" />
+		<flow-ref doc:name="SendNotifications" doc:id="b296c918-9b08-4c9d-b2e2-814e0566ddf3" name="sendNotifications"/>
 		<logger level="INFO" doc:name="End" doc:id="3165fc5f-3c58-4e45-a45a-cef908531af4" message='#[import prettifyFlowName from modules::ToolBox&#10;---&#10;{&#10;	step: "End $(prettifyFlowName(flow.name)) flow",&#10;	data: {}&#10;}]' category="${app.name}" />
 	</flow>
 	<flow name="post:\wellness\bulk:application\json:prc-wellness-router" doc:id="4f27c962-9b2a-4cc8-a7b2-3d5f1d8b62b1" >
 		<logger level="INFO" doc:name="Start" doc:id="3afc8fd5-6de0-46bb-870c-5694730449cb" message='#[import prettifyFlowName from modules::ToolBox&#10;---&#10;{&#10;	step: "Start $(prettifyFlowName(flow.name)) flow",&#10;	data: {}&#10;}]' category="${app.name}" />
-		<flow-ref doc:name="Flow Reference" doc:id="db8a5c1a-46f6-48bd-afdc-4985c811fb9f" name="postWellnessBulk"/>
+		<flow-ref doc:name="POST /wellness/bulk" doc:id="db8a5c1a-46f6-48bd-afdc-4985c811fb9f" name="postWellnessBulk"/>
 		<logger level="INFO" doc:name="End" doc:id="3b356e08-ba6d-4d58-98d9-feef664935b2" message='#[import prettifyFlowName from modules::ToolBox&#10;---&#10;{&#10;	step: "End $(prettifyFlowName(flow.name)) flow",&#10;	data: {}&#10;}]' category="${app.name}" />
+	</flow>
+	<flow name="schedule-notifications" doc:id="76bcf1a6-b5b4-4c3a-b026-6c0131214d4d" initialState="started" >
+		<scheduler doc:name="Every day" doc:id="4e7250f8-e41a-485e-8a74-9c1915ba16e4" >
+			<scheduling-strategy >
+				<cron expression="${scheduler.cron}" timeZone="${scheduler.timezone}" />
+			</scheduling-strategy>
+		</scheduler>
+		<set-variable value='#[now() as String {format: "yyyy-MM-dd"}]' doc:name="date" doc:id="90ac7915-44ca-47ba-a195-e48141e1fdd4" variableName="date" />
+		<logger level="INFO" doc:name="Start" doc:id="3b2a4a35-cc8a-4d5a-a513-01abd99e3558" message='#[import prettifyFlowName from modules::ToolBox&#10;output application/json&#10;---&#10;{"step": "Start $(prettifyFlowName(flow.name)) flow", "data": {"date": vars.date}}]' category="${app.name}" />
+		<flow-ref doc:name="sendNotifications" doc:id="61df20bd-005a-407a-968a-3fbb842aba85" name="sendNotifications" />
+		<logger level="INFO" doc:name="End" doc:id="43dd9192-bd9a-49c2-9f98-d542210fe369" message='#[import prettifyFlowName from modules::ToolBox&#10;output application/json&#10;---&#10;{"step": "End $(prettifyFlowName(flow.name)) flow", "data": {"date": vars.date}}]' category="${app.name}" />
 	</flow>
 </mule>

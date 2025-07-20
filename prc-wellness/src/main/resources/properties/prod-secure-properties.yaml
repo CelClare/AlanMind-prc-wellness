@@ -1,3 +1,5 @@
- system-name:
-  password:  "![ENCRYPTED_VALUE_HERE]"
+weather:
+  api_key:  "![t8t2ViGf6z8C79yVs5PKR7dPhbqHe1gJ+OYQg23M3QrgpLiEqZqoz7lk2L7ZSZsz]"
   
+authorizations:  
+  client_secret:  "![N+vTVySDWgCh112HZL7rNXsjR+dZv72Lu3jknLFR4+0zd3i1VnC3DpX4UipAz5B9]"
