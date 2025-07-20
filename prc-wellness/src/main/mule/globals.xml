@@ -13,13 +13,13 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
     <global-property doc:name="Global Property" doc:id="5460ed20-7b5d-4408-800c-4af36f867ba5" name="mule.env" value="local" />
     <global-property doc:name="Global Property" doc:id="d1b898e1-e999-4ce6-808a-541b6963e3af" name="mule.encryptionKey" value="alanmind21072025" />
 	<http:request-config name="HTTP_Request_configuration-smtp" doc:name="HTTP Request configuration" doc:id="442a82b4-8ac2-4ee0-af39-abf8da7fa379" basePath="${sys-smtp.basepath}" responseTimeout="999000">
-		<http:request-connection host="${sys-smtp.host}" port="${sys-smtp.port}" />
+		<http:request-connection host="${sys-smtp.host}" port="${sys-smtp.port}" protocol="HTTPS"/>
 	</http:request-config>
 	<http:request-config name="HTTP_Request_configuration-db" doc:name="HTTP Request configuration" doc:id="b54f25fe-5eed-4976-9b0c-b415fbdcd056" basePath="${sys-db.basepath}" responseTimeout="999000">
-		<http:request-connection host="${sys-db.host}" port="${sys-db.port}" />
+		<http:request-connection host="${sys-db.host}" port="${sys-db.port}" protocol="HTTPS"/>
 	</http:request-config>
 	<http:request-config name="HTTP_Request_configuration-weather" doc:name="HTTP Request configuration" doc:id="2ee24d4e-4530-4d5c-90b0-581016fdd2db" basePath="${sys-weather.basepath}" responseTimeout="999000">
-		<http:request-connection host="${sys-weather.host}" port="${sys-weather.port}" />
+		<http:request-connection host="${sys-weather.host}" port="${sys-weather.port}" protocol="HTTPS"/>
 	</http:request-config>
 	<os:object-store name="Object_store" doc:name="Object store" doc:id="004c5224-0a68-4631-99d9-dbc095515c32" entryTtl="604800" />
 </mule>
