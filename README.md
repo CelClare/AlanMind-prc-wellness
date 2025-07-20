@@ -62,4 +62,7 @@ Déclenche l’envoi des emails à tous·tes les abonné·e·s pour le jour cour
 - Ajout de l’enrichissement météo contextuel automatisé
 - Webhook ou callback sur succès d’envoi
 - Intégration d’un log analytics centralisé
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2e350f2796bccf6dad45b78c4641149810a1bc0c

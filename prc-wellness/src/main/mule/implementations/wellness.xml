@@ -174,6 +174,7 @@ output application/json
 			<try doc:name="Try" doc:id="75bc26d3-eb37-4e59-9f48-3cb52d96ad08" >
 				<logger level="DEBUG" doc:name="Before Request wellness" doc:id="b9dea07e-a5c1-41bf-8d49-a822dcd928b4" message='#[{&#10;	step: "Before Request wellness",&#10;	data: {wellness:payload}&#10;}]' category="${app.name}" />
 				<http:request method="POST" doc:name="to sys-database for create wellness bulk" doc:id="1b7ec02c-c4a7-4368-9625-d4549ee7b3ad" config-ref="HTTP_Request_configuration-db" path="/wellness">
+					<error-mapping sourceType="HTTP:NOT_FOUND" targetType="DBWEL:NOT_FOUND" />
 		</http:request>
 				<logger level="DEBUG" doc:name="After Request wellness" doc:id="7f567ac4-1451-4f7e-8bf7-5c64a5f806b7" message='#[{&#10;	step: "After Request wellness",&#10;	data: {wellness:payload}&#10;}]' category="${app.name}" />
 				<ee:transform doc:name="created" doc:id="79ee98d7-27e0-4f07-938b-47875fa6f804">

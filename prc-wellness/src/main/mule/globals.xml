@@ -3,23 +3,33 @@
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
     <http:listener-config name="prc-wellness-api-httpListenerConfig" basePath="api/v1">
-        <http:listener-connection host="0.0.0.0" port="${api.port}" />
+        <http:listener-connection host="0.0.0.0" port="${https.port}" />
     </http:listener-config>
     <apikit:config name="prc-wellness-router" api="resource::c6f447df-17d4-4a01-a863-96f97c48a183:wellness-process-api:1.0.2:raml:zip:wellness-process-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <configuration-properties doc:name="Configuration properties" doc:id="4063df3b-5a84-4651-abef-d4b8177267f0" file="properties/${mule.env}-properties.yaml" />
     <configuration doc:name="Configuration" doc:id="20536e27-ec16-4070-932c-510e13ec31f5" defaultErrorHandler-ref="global_Error-Handler" />
     <api-gateway:autodiscovery apiId="${api.autodiscoveryId}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="b16b08d7-6057-4749-ad64-9eb27e8721a7" flowRef="prc-wellness-api-main" />
     <secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="7e230af7-622b-4e28-a7a3-41e5f835a574" file="properties/${mule.env}-secure-properties.yaml" key="${mule.encryptionKey}" />
-    <global-property doc:name="Global Property" doc:id="5460ed20-7b5d-4408-800c-4af36f867ba5" name="mule.env" value="local" />
-    <global-property doc:name="Global Property" doc:id="d1b898e1-e999-4ce6-808a-541b6963e3af" name="mule.encryptionKey" value="alanmind21072025" />
 	<http:request-config name="HTTP_Request_configuration-smtp" doc:name="HTTP Request configuration" doc:id="442a82b4-8ac2-4ee0-af39-abf8da7fa379" basePath="${sys-smtp.basepath}" responseTimeout="999000">
-		<http:request-connection host="${sys-smtp.host}" port="${sys-smtp.port}" protocol="HTTPS"/>
+		<http:request-connection host="${sys-smtp.host}" port="${sys-smtp.https.port}"/>
+		<http:default-headers >
+			<http:default-header key="client_id" value="${authorizations.client_id}" />
+			<http:default-header key="client_secret" value="${authorizations.client_secret}" />
+		</http:default-headers>
 	</http:request-config>
 	<http:request-config name="HTTP_Request_configuration-db" doc:name="HTTP Request configuration" doc:id="b54f25fe-5eed-4976-9b0c-b415fbdcd056" basePath="${sys-db.basepath}" responseTimeout="999000">
-		<http:request-connection host="${sys-db.host}" port="${sys-db.port}" protocol="HTTPS"/>
+		<http:request-connection host="${sys-db.host}" port="${sys-db.https.port}"/>
+		<http:default-headers >
+			<http:default-header key="client_id" value="${authorizations.client_id}" />
+			<http:default-header key="client_secret" value="${authorizations.client_secret}" />
+		</http:default-headers>
 	</http:request-config>
 	<http:request-config name="HTTP_Request_configuration-weather" doc:name="HTTP Request configuration" doc:id="2ee24d4e-4530-4d5c-90b0-581016fdd2db" basePath="${sys-weather.basepath}" responseTimeout="999000">
-		<http:request-connection host="${sys-weather.host}" port="${sys-weather.port}" protocol="HTTPS"/>
+		<http:request-connection host="${sys-weather.host}" port="${sys-weather.https.port}"/>
+		<http:default-headers >
+			<http:default-header key="client_id" value="${authorizations.client_id}" />
+			<http:default-header key="client_secret" value="${authorizations.client_secret}" />
+		</http:default-headers>
 	</http:request-config>
 	<os:object-store name="Object_store" doc:name="Object store" doc:id="004c5224-0a68-4631-99d9-dbc095515c32" entryTtl="604800" />
 </mule>

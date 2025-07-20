@@ -1,31 +1,36 @@
 api: 
   name: "${artifactId}-${mule.env}"
   version: "${version}"
-  port: "8083"
   autodiscoveryId: "000000"
+  
+https:
+    port: "8083"  
   
 sys-weather:
   host: "localhost"
-  port: "8090"
+  https:
+    port: "8090"
   basepath: "api/v1"
   path: "/weather"
 
 sys-db:
   host: "localhost"
-  port: "8084"
+  https:
+    port: "8084"
   basepath: "api/v1"    
   
 sys-smtp:
   host: "localhost"
-  port: "8081"
+  https:
+    port: "8081"
   basepath: "api/v1"
   path: "/notifications"    
   
 scheduler:
-  state: "stopped"
-  cron: "0 0 * * * ?"
+  state: "started"
+  cron: "0 0/10 * * * ?"
   timezone: "Europe/Paris"
 
 authorizations:
-  client_id: ""
-  client_secret: ""
+  client_id: "d5e895b41b0f4c388189f736d93a2946"
+  client_secret: "${secure::authorizations.client_secret}"
