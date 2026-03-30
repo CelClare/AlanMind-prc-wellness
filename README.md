@@ -1,4 +1,4 @@
-# 🧩 AlanMind – prc-wellness
+# 🧩 AlanMind – prc-wellness - API de contenu bien-être quotidien
 
 Ce module Process API MuleSoft orchestre la gestion et la diffusion de contenus bien-être pour la plateforme AlanMind.
 
