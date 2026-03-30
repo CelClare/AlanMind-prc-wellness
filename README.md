@@ -1,6 +1,6 @@
 # 🧩 AlanMind – prc-wellness
 
-Ce module **Process API** MuleSoft orchestre la gestion et la diffusion des contenus bien-être de la plateforme AlanMind.
+Ce module Process API MuleSoft orchestre la gestion et la diffusion de contenus bien-être pour la plateforme AlanMind.
 
 ---
 
@@ -8,13 +8,13 @@ Ce module **Process API** MuleSoft orchestre la gestion et la diffusion des cont
 
 `prc-wellness` fait le lien entre la base de données (`sys-db`), les notifications par email (`sys-smtp`), et l’API d’exposition front (`exp-wellness`).
 
-Il permet :
-- La création de contenus bien-être (bulk ou unitaire)
-- La planification et l’envoi quotidien de notifications aux abonné·e·s (via CRON)
-- La centralisation des flux de validation & enrichissement (météo, etc.)
+Il permet :
+- la création de contenus bien-être (bulk ou unitaire)
+- la planification et l’envoi quotidien de notifications aux abonné·e·s via CRON
+- la centralisation des flux de validation et d’enrichissement contextuel (météo, humeur, etc.)
 
 **Cas d’usage :**
-Automatiser le “geste du jour” en orchestrant tous les systèmes : BDD, emails, enrichissement contextuel (par ex. météo, humeur, etc.), et garantir que l’appli AlanMind propose toujours un contenu frais et adapté.
+Automatiser le “geste du jour” en orchestrant tous les systèmes (BDD, emails, enrichissement contextuel) afin que l’application AlanMind propose un contenu toujours à jour et contextualisé.
 
 ---
 
@@ -62,11 +62,3 @@ Déclenche l’envoi des emails à tous·tes les abonné·e·s pour le jour cour
 - Ajout de l’enrichissement météo contextuel automatisé
 - Webhook ou callback sur succès d’envoi
 - Intégration d’un log analytics centralisé
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-=======
->>>>>>> 2e350f2796bccf6dad45b78c4641149810a1bc0c
-=======
-
->>>>>>> a366e5ef4bb6fa7569d8606a1e6ebb33eeb0456b
